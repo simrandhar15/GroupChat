@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NodeChat</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src='/socket.io/socket.io.js'></script>
+<style>
+body {
+  padding-top: 5%;
+  padding-bottom: 8%;
+}
+
+@media only screen and (max-width: 768px) {
+    body {
+      padding-top: 20%;
+      padding-bottom: 20%;
+    }
+}
+
+.container {
+    border: 2px solid #dedede;
+    background-color: #f1f1f1;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.darker {
+    border-color: #ccc;
+    background-color: #ddd;
+}
+
+.container::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+.container img {
+    float: left;
+    max-width: 60px;
+    width: 100%;
+    margin-right: 20px;
+    border-radius: 50%;
+}
+
+.container img.right {
+    float: right;
+    margin-left: 20px;
+    margin-right:0;
+}
+
+.time-right {
+/*    margin-top: -7%;
+*/    float: right;
+    color: #aaa;
+}
+
+.time-left {
+    float: left;
+    color: #999;
+}
+</style>
+</head>
+<body>
+<div class="container-fluid">
+  <nav class="navbar fixed-top navbar-dark bg-dark">
+      <a class="navbar-brand" href="#">NodeChat</a>
+      <div class="navbar-nav">
+       <span class="navbar-text">
+          <a>Hi, </a>
+          <a id="name" class="my-2 my-sm-0"><%= user.google.name %></a>
+           <a href='/logout' class="btn btn-outline-danger my-2 my-sm-0">Logout</a>
+        </span>
+      </div>
+</nav>
+<nav class="navbar fixed-bottom navbar-dark bg-dark">
+  <div class="input-group mb-3">
+    <textarea type="text" rows='1' class="form-control" id="message" placeholder='Send Message...'></textarea>
+    <div class="input-group-append">
+    <button class="btn btn-outline-success" id='send' type="button">Send</button>
+    </div>
+  </div>
+  <!-- div class="col-md-12">
+      <form  action="">
+        <div class="col-md-6 col-sm-12">
+          <input id="message" class='form-control mr-sm-2' placeholder='Message'>
+        </div>
+        <button id='send' class="btn btn-outline-success my-2 my-sm-0">Send</button>
+      </form>
+</div> -->
+</nav>
+<div class="container-fluid">
+  <div class="col-md-6 col-sm-12">
+    <div id='messages'>
+    </div>
+  </div>
+</div>
+<div id=bottom>
+</div>
+</div>
+
+<script type="text/javascript">
+  var socket = io()
+
+  $(() => {
+    $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+    $('#send').click(() => {
+      var currTime = new Date().toLocaleTimeString();
+      var message = { name : $("#name").text() , message : $("#message").val(), image: '<%= user.google.image %>', time: currTime, email: '<%= user.google.email %>' }
+      socket.emit('message', $('#message').val())
+          $('#message').val('')
+      postMessages(message)
+    })
+    getMessages() 
+
+    var height = 0;
+    $('#msg').each(function(i, value){
+        height += parseInt($(this).height());
+    });
+
+    height += '';
+
+    $('div').animate({scrollTop: height});
+  })
+
+  socket.on('message', addMessages)
+
+  function addMessages(message) {
+    $("#messages").append(`
+      <div id="msg" class="container">
+        <img src="${message.image}" alt="Avatar" style="width:100%;">
+        <h3>${message.name} </h3> 
+        <div class="card">
+          <div class="card-header">
+            <h7 class="card-subtitle mb-2 text-muted">${message.email}</h7>
+            <span class="time-right">${message.time}</span>
+          </div>
+          <div class="card-body">
+            <p>${message.message}</p>
+          </div>
+        </div>
+              </div>`)
+    console.log('message added')
+    $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+  }
+
+  function getMessages() {
+    $.get('http://localhost:3000/messages', (data) => {
+      data.forEach(addMessages)
+    })
+  }
+  function postMessages(message) {
+    $.post('http://localhost:3000/messages', message)
+  }
+</script>
+</body>
+</html>
